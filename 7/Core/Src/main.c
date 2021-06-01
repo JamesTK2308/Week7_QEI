@@ -48,7 +48,9 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 uint64_t _micros = 0;
-float EncoderVel = 0;
+float EncoderVel = 0, setpointV=0,setpointPWM=10000;
+float Kp=0,Ki=0,Kd=0;
+float Error=0,Previous=0,intergral=0,derivative=0;
 uint64_t Timestamp_Encoder = 0;
 /* USER CODE END PV */
 
@@ -400,17 +402,17 @@ static void MX_GPIO_Init(void)
 
 float EncoderVelocity_Update() //angular V
 {
-	//Save Last state เ�?็บค่ารอบที่�?ล้ว
+	//Save Last state เ�?็บค่ารอบที่�?ล้ว
 	static uint32_t EncoderLastPosition = 0;
 	static uint64_t EncoderLastTimestamp = 0;
 
-	//read data เ�?็บค่าปัจจุบัน
+	//read data เ�?็บค่าปัจจุบัน
 	uint32_t EncoderNowPosition = HTIM_ENCODER.Instance->CNT;
 	uint64_t EncoderNowTimestamp = micros();
- //เ�?็บค่าที่ปลี่ยน�?ปลง
+ //เ�?็บค่าที่ปลี่ยน�?ปลง
 	int32_t EncoderPositionDiff;
 	uint64_t EncoderTimeDiff;
-//ค่า�?ารเปลี่ยน�?ปลงง
+//ค่า�?ารเปลี่ยน�?ปลงง
 	EncoderTimeDiff = EncoderNowTimestamp - EncoderLastTimestamp;//dt
 	EncoderPositionDiff = EncoderNowPosition - EncoderLastPosition;//dp
 
@@ -430,8 +432,11 @@ float EncoderVelocity_Update() //angular V
 
 	//Calculate velocity
 	//EncoderTimeDiff is in uS
-	//ได้ความเร็วมอเตอร์ �?บบ p/r
+	//ได้ความเร็วมอเตอร์ �?บบ p/r
 	return (EncoderPositionDiff * 1000000) / (float) EncoderTimeDiff;
+
+}
+void PIDControl(){
 
 }
 
