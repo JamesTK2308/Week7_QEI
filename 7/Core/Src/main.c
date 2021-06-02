@@ -128,7 +128,7 @@ int main(void)
 //		}
 //		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
 //		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
-		if(setpointPWM>=0)
+		if(setpointV>=0)
 		{
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
@@ -139,7 +139,7 @@ int main(void)
 						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
 					}
 		}
-		else if(setpointPWM<0)
+		else if(setpointV<0)
 		{
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (-1)*setpointPWM);
 			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
