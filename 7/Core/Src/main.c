@@ -48,9 +48,10 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 uint64_t _micros = 0;
-float EncoderVel = 0, setpointV=0,setpointPWM=10000;
+float EncoderVel = 0, setpointV=0,setpointPWM=0;
 float Kp=0,Ki=0,Kd=0;
-float Error=0,Previous=0,intergral=0,derivative=0;
+float Error=0,PreviousError=0;
+float SumError=0;
 uint64_t Timestamp_Encoder = 0;
 /* USER CODE END PV */
 
@@ -107,6 +108,8 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+	HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -123,15 +126,38 @@ int main(void)
 //			Timestamp_Encoder = micros();
 //			EncoderVel = EncoderVelocity_Update();
 //		}
-
-
+//		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+//		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
+		if(setpointPWM>=0)
+		{
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
+			if (micros() - Timestamp_Encoder >= 100)
+					{
+						PIDControl();
+						Timestamp_Encoder = micros();
+						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+					}
+		}
+		else if(setpointPWM<0)
+		{
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (-1)*setpointPWM);
+			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+			if (micros() - Timestamp_Encoder >= 100)
+					{
+						PIDControl();
+						Timestamp_Encoder = micros();
+						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+					}
+		}
 
 		//Add LPF?
-		if (micros() - Timestamp_Encoder >= 100)
-		{
-			Timestamp_Encoder = micros();
-			EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
-		}
+//		if (micros() - Timestamp_Encoder >= 100)
+//		{
+//			PIDControl();
+//			Timestamp_Encoder = micros();
+//			EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+//		}
 
 	}
   /* USER CODE END 3 */
@@ -297,7 +323,7 @@ static void MX_TIM3_Init(void)
   htim3.Instance = TIM3;
   htim3.Init.Prescaler = 0;
   htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim3.Init.Period = 65535;
+  htim3.Init.Period = 10000;
   htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
@@ -433,11 +459,14 @@ float EncoderVelocity_Update() //angular V
 	//Calculate velocity
 	//EncoderTimeDiff is in uS
 	//ได้ความเร็วมอเตอร์ �?บบ p/r
-	return (EncoderPositionDiff * 1000000) / (float) EncoderTimeDiff;
+	return ((EncoderPositionDiff * 1000000) / (float) EncoderTimeDiff)*60/3072;
 
 }
 void PIDControl(){
-
+ Error=setpointV-EncoderVel;
+ SumError=SumError+Error;
+ setpointPWM=(Kp*Error)+(Ki*SumError)+(Kd*(Error-PreviousError));
+ PreviousError=Error;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
