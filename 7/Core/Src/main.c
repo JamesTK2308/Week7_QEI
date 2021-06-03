@@ -128,28 +128,50 @@ int main(void)
 //		}
 //		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
 //		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
-		if(setpointV>=0)
-		{
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
-			if (micros() - Timestamp_Encoder >= 100)
+		if (micros() - Timestamp_Encoder >= 1000){
+			Timestamp_Encoder = micros();
+			EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+			PIDControl();
+			if(setpointPWM>0)
 					{
-						PIDControl();
-						Timestamp_Encoder = micros();
-						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+						__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+						__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
+						//EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
 					}
-		}
-		else if(setpointV<0)
-		{
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (-1)*setpointPWM);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
-			if (micros() - Timestamp_Encoder >= 100)
+
+			else if(setpointPWM<0)
 					{
-						PIDControl();
-						Timestamp_Encoder = micros();
-						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+						__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (-1)*setpointPWM);
+						__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
 					}
+			else if (setpointPWM==0)
+				{
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+				__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+				}
 		}
+//		if(setpointV>=0)
+//		{
+//			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, 0);
+//			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, setpointPWM);
+//			if (micros() - Timestamp_Encoder >= 1000)
+//					{
+//						PIDControl();
+//						Timestamp_Encoder = micros();
+//						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+//					}
+//		}
+//		else if(setpointV<0)
+//		{
+//			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (-1)*setpointPWM);
+//			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_2, 0);
+//			if (micros() - Timestamp_Encoder >= 1000)
+//					{
+//						PIDControl();
+//						Timestamp_Encoder = micros();
+//						EncoderVel = (EncoderVel * 99 + EncoderVelocity_Update()) / 100.0;
+//					}
+//		}
 
 		//Add LPF?
 //		if (micros() - Timestamp_Encoder >= 100)
